@@ -174,18 +174,21 @@ class Enforcer(ManagementEnforcer):
         get_implicit_users_for_permission("data1", "read") will get: ["alice", "bob"].
         Note: only users will be returned, roles (2nd arg in "g") will be excluded.
         """
-        subjects = self.get_all_subjects()
-        roles = self.get_all_roles()
+        p_subjects = self.get_all_subjects()
+        g_inherit = self.model.get_values_for_field_in_policy("g", 1)
+        g_subjects = self.model.get_values_for_field_in_policy("g", 0)
 
-        users = set_subtract(subjects, roles)
+        subjects = list(set(p_subjects + g_subjects))
 
         res = list()
-        for user in users:
+        for user in subjects:
             req = join_slice(user, *permission)
             allowed = self.enforce(*req)
 
             if allowed:
                 res.append(user)
+
+        res = res - g_inherit
 
         return res
 
